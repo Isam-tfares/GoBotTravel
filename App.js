@@ -5,6 +5,8 @@ import { useCallback } from 'react'
 import { FONTS } from './constants/fonts'
 import AppNavigation from './navigations/AppNavigation'
 import { ThemeProvider } from './themes/ThemeProvider'
+import { Provider } from 'react-redux';
+import store from './utils/reducers/store';
 
 SplashScreen.preventAutoHideAsync()
 
@@ -22,10 +24,13 @@ export default function App() {
     }
 
     return (
-        <ThemeProvider>
-        <SafeAreaProvider onLayout={onLayoutRootView}>
-            <AppNavigation />
-        </SafeAreaProvider>
-        </ThemeProvider>
+        <Provider store={store}>
+
+            <ThemeProvider>
+                <SafeAreaProvider onLayout={onLayoutRootView}>
+                    <AppNavigation />
+                </SafeAreaProvider>
+            </ThemeProvider>
+        </Provider>
     )
 }

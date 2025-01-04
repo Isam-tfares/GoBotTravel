@@ -3,14 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES } from '../constants'; // Adjust the path based on your project structure
 import { useTheme } from '../themes/ThemeProvider';
+import { useSelector, useDispatch } from 'react-redux';
+
 
 const Profile = ({ navigation }) => {
     const { colors } = useTheme();
+    const user = useSelector(state => state.user.user.user); // Get user data from Redux store
+    const dispatch = useDispatch();
 
-    // Placeholder user data
-    const user = {
-        fullName: 'John Doe', // Replace this with dynamic data
-        email: 'johndoe@example.com', // Replace this with dynamic data
+    const handleLogout = () => {
+        dispatch({ type: 'LOGOUT' });
+        navigation.navigate('Login');
     };
 
     return (
@@ -20,7 +23,7 @@ const Profile = ({ navigation }) => {
 
                 <View style={styles.infoBox}>
                     <Text style={[styles.label, { color: colors.text }]}>Full Name:</Text>
-                    <Text style={[styles.value, { color: colors.text }]}>{user.fullName}</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{user.fullname}</Text>
                 </View>
 
                 <View style={styles.infoBox}>
@@ -31,8 +34,7 @@ const Profile = ({ navigation }) => {
                 <TouchableOpacity
                     style={[styles.logoutButton, { backgroundColor: COLORS.primary }]}
                     onPress={() => {
-                        // Handle logout action
-                        navigation.replace('Login'); // Navigate to login on logout
+                        handleLogout()
                     }}
                 >
                     <Text style={styles.logoutButtonText}>Log Out</Text>

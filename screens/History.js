@@ -1,48 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../themes/ThemeProvider';
 import Feather from '@expo/vector-icons/Feather';
-import { Ionicons } from '@expo/vector-icons'
-
+import { Ionicons } from '@expo/vector-icons';
 
 const History = () => {
     const { colors } = useTheme();
-
-    // Placeholder data for history
-    const [history, setHistory] = useState([
-        { id: '1', title: 'Booked Flight to Paris', date: '2024-12-20' },
-        { id: '2', title: 'Hotel Reservation in Tokyo', date: '2024-11-15' },
-        { id: '3', title: 'Safari Tour in Kenya', date: '2024-10-10' },
-        { id: '4', title: 'Cruise Booking in the Caribbean', date: '2024-09-25' },
-        { id: '5', title: 'City Tour in New York', date: '2024-08-05' },
-        { id: '6', title: 'Train Tickets to Venice', date: '2024-07-12' },
-        { id: '7', title: 'Dinner Reservation in Dubai', date: '2024-06-30' },
-    ]);
+    const [history, setHistory] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Fetch history data from API or database
-        // Example:
-        // fetch('https://api.example.com/history')
-        //     .then(response => response.json())
-        //     .then(data => setHistory(data))
-        //     .catch(error => console.error(error));
+        const fetchHistory = async () => {
+            try {
+                const response = await fetch('http://192.168.8.104:5000/get_history'); // Replace with your Flask server's IP
+                if (!response.ok) {
+                    throw new Error('Failed to fetch history');
+                }
+                const data = await response.json();
+                setHistory(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchHistory();
     }, []);
 
     const renderHistoryItem = ({ item }) => (
         <View style={[styles.historyItem, { flexDirection: 'row', alignItems: 'center' }]}>
-            {/* Left Icon */}
             <Ionicons name="chatbubble-ellipses-outline" size={24} style={styles.icon} />
-
-            {/* Text Content */}
             <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
                 <Text style={[styles.date, { color: colors.textSecondary }]}>{item.date}</Text>
             </View>
-
-            {/* Right Icon */}
             <Feather name="more-vertical" size={24} color={colors.text} />
         </View>
     );
+
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }]}>
+                <Text style={{ color: colors.text }}>{error}</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -82,11 +94,11 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         borderRadius: 8,
         backgroundColor: '#f9f9f9',
-        flexDirection: 'row', // Align items in a row
-        alignItems: 'center', // Vertically center items
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     icon: {
-        marginRight: 12, // Space between the icon and text
+        marginRight: 12,
     },
     title: {
         fontSize: 16,

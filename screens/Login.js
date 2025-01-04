@@ -7,8 +7,11 @@ import { COLORS } from '../constants'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import { reducer } from '../utils/reducers/formReducers'
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../utils/actions/formActions'
 import { validateInput } from '../utils/actions/formActions'
 import { useTheme } from '../themes/ThemeProvider'
+import { useSelector } from 'react-redux'
 
 const initialState = {
     inputValues: {
@@ -25,8 +28,17 @@ const initialState = {
 const Login = ({ navigation }) => {
     const [formState, dispatchFormState] = useReducer(reducer, initialState)
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState(null)
+    const [error, setErrorMessage] = useState(null)
     const { colors } = useTheme()
+    const dispatch = useDispatch();  // Initialize dispatch from Redux
+    // check if is logined in
+    const isLogined = useSelector(state => state.user.user);
+    useEffect(() => {
+        if (isLogined) {
+            navigation.navigate('BottomTabNavigation');
+        }
+    }, [isLogined, navigation]);
+
 
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {
@@ -41,7 +53,8 @@ const Login = ({ navigation }) => {
         const { email, password } = formState.inputValues;
 
         try {
-            const response = await fetch('https://your-api-url.com/login', {
+            setIsLoading(true);
+            const response = await fetch('http://192.168.8.104:5000/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,22 +66,33 @@ const Login = ({ navigation }) => {
             });
 
             if (response.ok) {
-                // const data = await response.json();
-                const data = {  // REMove this line and uncomment the above line
-                    token: 'your_token_here',
-                };
+                const data = await response.json();
                 console.log(data);
                 if (data.token) {
+                    console.log('Login successful');
+                    // Save data in redux stor e
+                    // Dispatch action to store user data in Redux store
+                    dispatch(setUserData({
+                        token: data.token,
+                        user: {
+                            user_id: data.user.user_id,
+                            fullname: data.user.fullname,
+                            email: data.user.email,
+                        }
+                    }));
                     // Navigate to the next screen and pass the token
                     navigation.navigate('BottomTabNavigation');
                 }
             } else {
-                const errorData = await response.json();
-                setErrorMessage(errorData.message || 'Login failed');
+                // const errorData = await response.json();
+                setErrorMessage('Invalid email or password. Please try again.');
             }
         } catch (error) {
             console.error('Login error:', error);
             setErrorMessage('An error occurred. Please try again later.');
+        }
+        finally {
+            setIsLoading(false);
         }
     };
 

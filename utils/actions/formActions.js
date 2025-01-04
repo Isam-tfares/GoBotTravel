@@ -13,3 +13,12 @@ export const validateInput = (inputId, inputValue) => {
         return validatePassword(inputId, inputValue)
     }
 }
+
+export const setUserData = (userData) => ({
+    type: 'SET_USER_DATA',
+    payload: userData,
+});
+
+export const logoutUser = () => ({
+    type: 'LOGOUT_USER',
+});

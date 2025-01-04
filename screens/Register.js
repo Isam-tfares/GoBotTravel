@@ -9,6 +9,8 @@ import Button from '../components/Button';
 import { reducer } from '../utils/reducers/formReducers';
 import { validateInput } from '../utils/actions/formActions';
 import { useTheme } from '../themes/ThemeProvider';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 const initialState = {
     inputValues: {
@@ -29,6 +31,14 @@ const Register = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const { colors } = useTheme();
+    const dispatch = useDispatch(); // Initialize dispatch
+    const isLogined = useSelector(state => state.user.user);
+    useEffect(() => {
+        if (isLogined) {
+            navigation.navigate('BottomTabNavigation');
+        }
+    }, [isLogined, navigation]);
+
 
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {
@@ -42,7 +52,7 @@ const Register = ({ navigation }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://your-flask-api-url/register', { // Replace with your API URL
+            const response = await fetch('http://192.168.8.104:5000/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,17 +65,27 @@ const Register = ({ navigation }) => {
             });
 
             const data = await response.json();
+            console.log('Registration response:', data);
 
             if (response.ok) {
-                setIsLoading(false);
-                navigation.navigate('Login');
+                dispatch({
+                    type: 'REGISTER_USER',
+                    payload: {
+                        fullName: data.fullName,
+                        email: data.email,
+                        userId: data.userId, // Assuming your API returns userId
+                        token: data.token,  // Assuming your API returns a token
+                    },
+                });
+                navigation.navigate('BottomTabNavigation');
             } else {
                 setError(data.message || 'Something went wrong!');
-                setIsLoading(false);
             }
         } catch (error) {
             console.error('Error during registration:', error);
             setError('An error occurred!');
+        }
+        finally {
             setIsLoading(false);
         }
     };

@@ -43,8 +43,8 @@ export const validatePassword = (id, value) => {
 
     if (value !== '') {
         constraints.length = {
-            minimum: 6,
-            message: ' must be at least 6 characters',
+            minimum: 3,
+            message: ' must be at least 3 characters',
         }
     }
 
