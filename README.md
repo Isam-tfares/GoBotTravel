@@ -2,7 +2,7 @@
 
 GoBotTravel is a mobile app built using React Native Expo. The app offers features like user authentication, intelligent chat interactions, and image generation to enhance your travel experiences. The backend is powered by a Flask API.
 
-![GoBotTravel](https://i.ibb.co/RcNyyT6/GoBotTravel.png)
+<!-- ![GoBotTravel](https://i.ibb.co/RcNyyT6/GoBotTravel.png) -->
 
 ## Features
 
