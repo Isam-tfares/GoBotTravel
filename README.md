@@ -82,5 +82,3 @@ Contributions to GoBotTravel are welcome! If you find any issues or want to add 
 
 Explore the world with GoBotTravel! 🌍✈️
 ```
-
-This version focuses on the React Native frontend and integrates with a Flask API backend. Let me know if any further adjustments are needed!
