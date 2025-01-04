@@ -81,4 +81,3 @@ Contributions to GoBotTravel are welcome! If you find any issues or want to add 
 ---
 
 Explore the world with GoBotTravel! 🌍✈️
-```
