@@ -1,0 +1,30 @@
+{
+    "expo": {
+        "name": "GoBotTravel",
+        "slug": "GoBotTravel",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/images/icon.jpg",
+        "userInterfaceStyle": "light",
+        "splash": {
+            "image": "./assets/images/splash.jpg",
+            "resizeMode": "cover",
+            "backgroundColor": "#ffffff"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/images/adaptive-icon.jpg",
+                "backgroundColor": "#ffffff"
+            }
+        },
+        "web": {
+            "favicon": "./assets/images/icon.jpg"
+        }
+    }
+}
