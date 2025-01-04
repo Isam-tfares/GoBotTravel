@@ -1,11 +1,21 @@
-import { View, TouchableOpacity, TextInput, Image } from 'react-native';
 import React, { useState } from 'react';
+import {
+    View,
+    TouchableOpacity,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    FlatList,
+    Keyboard,
+    TouchableWithoutFeedback,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SIZES, images } from '../constants';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons, FontAwesome, Ionicons } from '@expo/vector-icons';
-import { Bubble, GiftedChat } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { COLORS, SIZES, images } from '../constants';
 import { useTheme } from '../themes/ThemeProvider';
+import { Image } from 'react-native';
 
 const Chat = ({ navigation }) => {
     const [inputMessage, setInputMessage] = useState('');
@@ -13,44 +23,23 @@ const Chat = ({ navigation }) => {
     const [messages, setMessages] = useState([]);
     const { colors } = useTheme();
 
+    const dismissKeyboard = () => {
+        Keyboard.dismiss();
+    };
+
     const renderMessage = (props) => {
         const { currentMessage } = props;
+        const isUser = currentMessage.user._id === 1;
 
-        if (currentMessage.user._id === 1) {
-            return (
-                <View
-                    style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        justifyContent: 'flex-end',
-                    }}
-                >
-                    <Bubble
-                        {...props}
-                        wrapperStyle={{
-                            right: {
-                                backgroundColor: COLORS.primary,
-                                marginRight: 12,
-                                marginVertical: 12,
-                            },
-                        }}
-                        textStyle={{
-                            right: {
-                                color: COLORS.white,
-                            },
-                        }}
-                    />
-                </View>
-            );
-        } else {
-            return (
-                <View
-                    style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        justifyContent: 'flex-start',
-                    }}
-                >
+        return (
+            <View
+                style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    justifyContent: isUser ? 'flex-end' : 'flex-start',
+                }}
+            >
+                {!isUser && (
                     <Image
                         source={images.avatar}
                         style={{
@@ -60,71 +49,91 @@ const Chat = ({ navigation }) => {
                             marginLeft: 8,
                         }}
                     />
-                    <Bubble
-                        {...props}
-                        wrapperStyle={{
-                            left: {
-                                backgroundColor: COLORS.secondaryWhite,
-                                marginLeft: 12,
-                            },
-                        }}
-                        textStyle={{
-                            left: {
-                                color: COLORS.black,
-                            },
-                        }}
-                    />
-                </View>
-            );
-        }
+                )}
+                <Bubble
+                    {...props}
+                    wrapperStyle={{
+                        right: {
+                            backgroundColor: COLORS.primary,
+                            marginRight: 12,
+                            marginVertical: 12,
+                        },
+                        left: {
+                            backgroundColor: COLORS.secondaryWhite,
+                            marginLeft: 12,
+                        },
+                    }}
+                    textStyle={{
+                        right: {
+                            color: COLORS.white,
+                        },
+                        left: {
+                            color: COLORS.black,
+                        },
+                    }}
+                />
+            </View>
+        );
     };
 
     const generateText = async () => {
+        if (!inputMessage.trim()) return;
+        const msg = inputMessage;
+        setInputMessage('');
+
         setIsTyping(true);
+
         const userMessage = {
             _id: Math.random().toString(36).substring(7),
-            text: inputMessage,
+            text: msg,
             createdAt: new Date(),
             user: { _id: 1 },
         };
 
-        setMessages((previousMessage) =>
-            GiftedChat.append(previousMessage, [userMessage])
+        setMessages((previousMessages) =>
+            GiftedChat.append(previousMessages, [userMessage])
         );
 
+        const chatHistory = messages.map((msg) => ({
+            role: msg.user._id === 1 ? 'user' : 'bot',
+            content: msg.text,
+        }));
+
         try {
-            const response = await fetch('http://your-flask-api-url/generate-text', {
+            const response = await fetch('http://192.168.8.104:5000/get_response', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ inputMessage }),
+                body: JSON.stringify({
+                    user_query: msg,
+                    chat_history: chatHistory,
+                }),
             });
+
             const data = await response.json();
 
-            const botMessage = {
-                _id: Math.random().toString(36).substring(7),
-                text: data.outputMessage.trim(),
-                createdAt: new Date(),
-                user: { _id: 2, name: 'ChatBot' },
-            };
+            if (data.response) {
+                const botMessage = {
+                    _id: Math.random().toString(36).substring(7),
+                    text: data.response.trim(),
+                    createdAt: new Date(),
+                    user: { _id: 2, name: 'ChatBot' },
+                };
 
-            setIsTyping(false);
-            setMessages((previousMessage) =>
-                GiftedChat.append(previousMessage, [botMessage])
-            );
+                setMessages((previousMessages) =>
+                    GiftedChat.append(previousMessages, [botMessage])
+                );
+            } else if (data.error) {
+                console.error('API Error:', data.error);
+            }
         } catch (error) {
-            console.error('Error generating text:', error);
+            console.error('Error fetching response:', error);
+        } finally {
             setIsTyping(false);
         }
-    };
 
-    const submitHandler = () => {
-        generateText();
-    };
-
-    const handleInputText = (text) => {
-        setInputMessage(text);
+        setInputMessage('');
     };
 
     return (
@@ -135,104 +144,77 @@ const Chat = ({ navigation }) => {
             }}
         >
             <StatusBar style="auto" />
-            <View
-                style={{
-                    height: 60,
-                    backgroundColor: colors.background,
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexDirection: 'row',
-                    paddingHorizontal: 22,
-                    width: SIZES.width,
-                    zIndex: 9999,
-                }}
-            >
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={{
-                        height: 40,
-                        width: 40,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
+            <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <MaterialIcons
-                        name="keyboard-arrow-left"
-                        size={24}
-                        color={colors.text}
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => console.log('Save chat')}>
-                    <Ionicons
-                        name="bookmark-outline"
-                        size={24}
-                        color={colors.text}
-                    />
-                </TouchableOpacity>
-            </View>
-
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-                <GiftedChat
-                    messages={messages}
-                    renderInputToolbar={() => { }}
-                    user={{ _id: 1 }}
-                    minInputToolbarHeight={0}
-                    renderMessage={renderMessage}
-                    isTyping={isTyping}
-                />
-            </View>
-
-            <View
-                style={{
-                    flexDirection: 'row',
-                    backgroundColor: colors.background,
-                    paddingVertical: 8,
-                }}
-            >
-                <View
-                    style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        marginLeft: 10,
-                        backgroundColor: colors.background,
-                        paddingVertical: 8,
-                        marginHorizontal: 12,
-                        borderRadius: 12,
-                        borderColor: colors.text,
-                        borderWidth: 0.2,
-                    }}
-                >
-                    <TextInput
-                        value={inputMessage}
-                        onChangeText={handleInputText}
-                        placeholder="Enter your question"
-                        placeholderTextColor={colors.text}
+                    <View
                         style={{
-                            color: colors.text,
-                            flex: 1,
-                            paddingHorizontal: 10,
-                        }}
-                    />
-
-                    <TouchableOpacity
-                        onPress={submitHandler}
-                        style={{
-                            padding: 6,
-                            borderRadius: 8,
-                            marginHorizontal: 12,
+                            height: 60,
+                            backgroundColor: colors.background,
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingHorizontal: 22,
+                            width: SIZES.width,
                         }}
                     >
-                        <FontAwesome
-                            name="send-o"
-                            color={COLORS.primary}
-                            size={24}
-                        />
-                    </TouchableOpacity>
-                </View>
-            </View>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <MaterialIcons name="keyboard-arrow-left" size={24} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Use FlatList instead of ScrollView for better performance */}
+                    <FlatList
+                        data={messages}
+                        renderItem={({ item }) => renderMessage({ currentMessage: item })}
+                        keyExtractor={(item) => item._id.toString()}
+                        inverted={true}
+                        contentContainerStyle={{
+                            flexGrow: 1,
+                            paddingBottom: 80,
+                        }}
+                    />
+
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            backgroundColor: colors.background,
+                            padding: 8,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <View
+                            style={{
+                                flex: 1,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: colors.background,
+                                borderWidth: 0.5,
+                                borderColor: colors.text,
+                                borderRadius: 12,
+                                marginHorizontal: 12,
+                                paddingHorizontal: 10,
+                            }}
+                        >
+                            <TextInput
+                                value={inputMessage}
+                                onChangeText={setInputMessage}
+                                placeholder="Enter your question"
+                                placeholderTextColor={colors.text}
+                                style={{
+                                    flex: 1,
+                                    color: colors.text,
+                                }}
+                            />
+                            <TouchableOpacity onPress={generateText}>
+                                <FontAwesome name="send-o" color={COLORS.primary} size={24} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
         </SafeAreaView>
     );
 };
