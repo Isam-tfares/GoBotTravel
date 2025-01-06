@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES } from '../constants'; // Adjust the path based on your project structure
 import { useTheme } from '../themes/ThemeProvider';
 import { useSelector, useDispatch } from 'react-redux';
+import { Image } from 'react-native';
 
 
 const Profile = ({ navigation }) => {
@@ -19,7 +20,9 @@ const Profile = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.content}>
-                <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
+                <View style={styles.imgC}>
+                    <Image style={styles.img} source={require("../assets/images/profile.png")} />
+                </View>
 
                 <View style={styles.infoBox}>
                     <Text style={[styles.label, { color: colors.text }]}>Full Name:</Text>
@@ -59,13 +62,15 @@ const styles = StyleSheet.create({
         marginBottom: SIZES.padding,
     },
     infoBox: {
-        width: '100%',
-        padding: SIZES.padding,
+        width: '90%',
+        paddingHorizontal: 20,
+        paddingVertical: SIZES.base,
         marginVertical: SIZES.base,
         borderRadius: SIZES.radius,
         borderWidth: 1,
         borderColor: COLORS.gray,
         backgroundColor: COLORS.lightGray,
+
     },
     label: {
         ...FONTS.body3,
@@ -76,14 +81,32 @@ const styles = StyleSheet.create({
         marginTop: SIZES.base / 2,
     },
     logoutButton: {
-        marginTop: SIZES.padding * 2,
-        padding: SIZES.base * 1.5,
+        width: '90%',
+        padding: SIZES.base,
         borderRadius: SIZES.radius,
+        marginTop: SIZES.padding,
+        justifyContent: 'center',
+        height: 60,
         alignItems: 'center',
     },
     logoutButtonText: {
         ...FONTS.h4,
         color: COLORS.white,
+    },
+    img: {
+        backgroundColor: 'white',
+        borderRadius: 50,
+        width: 90,
+        height: 90,
+        padding: 10,
+    },
+    imgC: {
+        width: 100,
+        height: 100,
+        borderRadius: 200,
+        backgroundColor: 'white',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

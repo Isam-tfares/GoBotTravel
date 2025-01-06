@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     TouchableOpacity,
@@ -8,6 +8,7 @@ import {
     FlatList,
     Keyboard,
     TouchableWithoutFeedback,
+    Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -16,6 +17,7 @@ import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { COLORS, SIZES, images } from '../constants';
 import { useTheme } from '../themes/ThemeProvider';
 import { Image } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 
 const Chat = ({ navigation }) => {
     const [inputMessage, setInputMessage] = useState('');
@@ -23,25 +25,37 @@ const Chat = ({ navigation }) => {
     const [messages, setMessages] = useState([]);
     const { colors } = useTheme();
 
+    const route = useRoute();
+    const { firstMessage } = route.params;
+
+    useEffect(() => {
+        if (firstMessage) {
+            setInputMessage(firstMessage);
+            generateText();
+        }
+    }, []);
     const dismissKeyboard = () => {
         Keyboard.dismiss();
     };
 
-    const renderMessage = (props) => {
-        const { currentMessage } = props;
-        const isUser = currentMessage.user._id === 1;
+    const renderMessage = ({ currentMessage }) => {
+        if (!currentMessage || !currentMessage.user) {
+            return null; // Skip rendering if user data is missing
+        }
+
+        const isUser = currentMessage.user._id === 1; // Check if the message is from the user
 
         return (
             <View
                 style={{
-                    flex: 1,
                     flexDirection: 'row',
-                    justifyContent: isUser ? 'flex-end' : 'flex-start',
+                    justifyContent: isUser ? 'flex-end' : 'flex-start', // Align user messages to the right
+                    marginVertical: 8,
                 }}
             >
                 {!isUser && (
                     <Image
-                        source={images.avatar}
+                        source={images.avatar} // Replace with your bot's avatar image
                         style={{
                             height: 40,
                             width: 40,
@@ -50,31 +64,29 @@ const Chat = ({ navigation }) => {
                         }}
                     />
                 )}
-                <Bubble
-                    {...props}
-                    wrapperStyle={{
-                        right: {
-                            backgroundColor: COLORS.primary,
-                            marginRight: 12,
-                            marginVertical: 12,
-                        },
-                        left: {
-                            backgroundColor: COLORS.secondaryWhite,
-                            marginLeft: 12,
-                        },
+                <View
+                    style={{
+                        maxWidth: '75%',
+                        backgroundColor: isUser ? COLORS.primary : COLORS.secondaryWhite, // User: blue, Bot: white
+                        borderRadius: 16,
+                        padding: 12,
+                        marginHorizontal: 8,
                     }}
-                    textStyle={{
-                        right: {
-                            color: COLORS.white,
-                        },
-                        left: {
-                            color: COLORS.black,
-                        },
-                    }}
-                />
+                >
+                    <Text
+                        style={{
+                            color: isUser ? COLORS.white : COLORS.black, // Text color: white for user, black for bot
+                            fontSize: 16,
+                        }}
+                    >
+                        {currentMessage.text}
+                    </Text>
+                </View>
             </View>
         );
     };
+
+
 
     const generateText = async () => {
         if (!inputMessage.trim()) return;
@@ -137,27 +149,20 @@ const Chat = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView
-            style={{
-                flex: 1,
-                backgroundColor: colors.background,
-            }}
-        >
-            <StatusBar style="auto" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <TouchableWithoutFeedback onPress={dismissKeyboard}>
                 <KeyboardAvoidingView
                     style={{ flex: 1 }}
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
+                    {/* Header */}
                     <View
                         style={{
                             height: 60,
                             backgroundColor: colors.background,
                             flexDirection: 'row',
-                            justifyContent: 'space-between',
                             alignItems: 'center',
                             paddingHorizontal: 22,
-                            width: SIZES.width,
                         }}
                     >
                         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -165,18 +170,24 @@ const Chat = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Use FlatList instead of ScrollView for better performance */}
+                    {/* Chat Messages */}
                     <FlatList
                         data={messages}
                         renderItem={({ item }) => renderMessage({ currentMessage: item })}
                         keyExtractor={(item) => item._id.toString()}
-                        inverted={true}
+                        inverted={true} // Ensures the newest messages appear at the bottom
                         contentContainerStyle={{
-                            flexGrow: 1,
-                            paddingBottom: 80,
+                            paddingTop: 20, // Adds space at the top for better appearance
+                            flexGrow: 1, // Ensures the list grows to accommodate messages
                         }}
+                        style={{
+                            flex: 1, // Ensures the FlatList takes up the available screen space
+                        }}
+                        showsVerticalScrollIndicator={false} // Optional: Hides the scroll indicator
                     />
 
+
+                    {/* Input Field */}
                     <View
                         style={{
                             flexDirection: 'row',
@@ -216,6 +227,7 @@ const Chat = ({ navigation }) => {
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
         </SafeAreaView>
+
     );
 };
 
