@@ -14,12 +14,12 @@ import { useSelector } from 'react-redux';
 
 const initialState = {
     inputValues: {
-        fullName: '',
+        username: '',
         email: '',
         password: '',
     },
     inputValidities: {
-        fullName: false,
+        username: false,
         email: false,
         password: false,
     },
@@ -31,14 +31,14 @@ const Register = ({ navigation }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const { colors } = useTheme();
-    const dispatch = useDispatch(); // Initialize dispatch
+    const dispatch = useDispatch();
     const isLogined = useSelector(state => state.user.user);
+
     useEffect(() => {
         if (isLogined) {
             navigation.navigate('BottomTabNavigation');
         }
     }, [isLogined, navigation]);
-
 
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {
@@ -52,13 +52,13 @@ const Register = ({ navigation }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://192.168.8.104:5000/register', {
+            const response = await fetch('http://192.168.8.104:5000/api/signup', { // Updated to use the signup API
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    fullName: formState.inputValues.fullName,
+                    username: formState.inputValues.username, // Updated to match the signup API
                     email: formState.inputValues.email,
                     password: formState.inputValues.password,
                 }),
@@ -68,30 +68,20 @@ const Register = ({ navigation }) => {
             console.log('Registration response:', data);
 
             if (response.ok) {
-                dispatch({
-                    type: 'REGISTER_USER',
-                    payload: {
-                        fullName: data.fullName,
-                        email: data.email,
-                        userId: data.userId, // Assuming your API returns userId
-                        token: data.token,  // Assuming your API returns a token
-                    },
-                });
-                navigation.navigate('BottomTabNavigation');
+                // Handle successful registration (optional: navigate or show success message)
+                Alert.alert('Success', 'User registered successfully!');
+                navigation.navigate('Login'); // Redirect to login screen after registration
             } else {
-                setError(data.message || 'Something went wrong!');
+                setError(data.error || 'Something went wrong!');
             }
         } catch (error) {
             console.error('Error during registration:', error);
             setError('An error occurred!');
-        }
-        finally {
+        } finally {
             setIsLoading(false);
         }
     };
 
-
-    // Display error if something went wrong
     useEffect(() => {
         if (error) {
             Alert.alert('An error occurred', error);
@@ -130,9 +120,9 @@ const Register = ({ navigation }) => {
 
                     <Input
                         onInputChanged={inputChangedHandler}
-                        errorText={formState.inputValidities['fullName']}
-                        id="fullName"
-                        placeholder="Enter your full name"
+                        errorText={formState.inputValidities['username']}
+                        id="username"
+                        placeholder="Enter your username"
                         placeholderTextColor={colors.text}
                     />
 

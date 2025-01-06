@@ -1,44 +1,115 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useTheme } from '../themes/ThemeProvider';
-import Feather from '@expo/vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
+import { TouchableOpacity } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const History = () => {
     const { colors } = useTheme();
-    const [history, setHistory] = useState([]);
+    const [conversations, setConversations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const token = useSelector((state) => state.user.user.token); // Get JWT token from Redux store
+    const navigation = useNavigation();
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const response = await fetch('http://192.168.8.104:5000/get_history'); // Replace with your Flask server's IP
-                if (!response.ok) {
-                    throw new Error('Failed to fetch history');
-                }
-                const data = await response.json();
-                setHistory(data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
+    const fetchConversations = async () => {
+        try {
+            setIsLoading(true);
+
+            const response = await fetch('http://192.168.8.104:5000/api/conversations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`, // Attach JWT token for authentication
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch conversations');
             }
-        };
 
-        fetchHistory();
-    }, []);
+            const data = await response.json();
+            setConversations(data.conversations); // Update state with conversations
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const renderHistoryItem = ({ item }) => (
-        <View style={[styles.historyItem, { flexDirection: 'row', alignItems: 'center' }]}>
-            <Ionicons name="chatbubble-ellipses-outline" size={24} style={styles.icon} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-                <Text style={[styles.date, { color: colors.textSecondary }]}>{item.date}</Text>
-            </View>
-            <Feather name="more-vertical" size={24} color={colors.text} />
-        </View>
+    useFocusEffect(
+        useCallback(() => {
+            fetchConversations();
+        }, [token])
     );
+
+    const handleDelete = async (id) => {
+        try {
+            // Show confirmation alert before deleting
+            Alert.alert(
+                'Delete Conversation',
+                'Are you sure you want to delete this conversation?',
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Delete',
+                        onPress: async () => {
+                            try {
+                                const response = await fetch(`http://192.168.8.104:5000/api/conversation/${id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${token}`, // Attach JWT token for authentication
+                                    },
+                                });
+
+                                if (!response.ok) {
+                                    throw new Error('Failed to delete conversation');
+                                }
+
+                                // Successfully deleted conversation, update the state
+                                setConversations((prevConversations) =>
+                                    prevConversations.filter((conversation) => conversation.id !== id)
+                                );
+
+                                Alert.alert('Success', 'Conversation deleted successfully');
+                            } catch (err) {
+                                Alert.alert('Error', err.message);
+                            }
+                        },
+                    },
+                ],
+                { cancelable: false }
+            );
+        } catch (err) {
+            Alert.alert('Error', 'Something went wrong while deleting the conversation');
+        }
+    };
+
+    const renderConversationItem = ({ item }) => {
+        return (
+            <>
+                <TouchableOpacity
+                    style={[styles.historyItem, { flexDirection: 'row', alignItems: 'center' }]}
+                    onPress={() => navigation.navigate('Chat', { conversation: item })}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={24} style={styles.icon} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                        <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date(item.timestamp).toLocaleString()}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                        <MaterialIcons name="delete-outline" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </>
+        );
+    };
 
     if (isLoading) {
         return (
@@ -58,17 +129,17 @@ const History = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.header, { color: colors.text }]}>History</Text>
-            {history.length > 0 ? (
+            <Text style={[styles.header, { color: colors.text }]}>Conversations</Text>
+            {conversations.length > 0 ? (
                 <FlatList
-                    data={history}
-                    renderItem={renderHistoryItem}
-                    keyExtractor={(item) => item.id}
+                    data={conversations}
+                    renderItem={renderConversationItem}
+                    keyExtractor={(item) => item.id.toString()}
                     contentContainerStyle={styles.list}
                 />
             ) : (
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    No history available
+                    No conversations available
                 </Text>
             )}
         </View>
@@ -80,6 +151,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         paddingTop: 35,
+        paddingBottom: 35,
     },
     header: {
         fontSize: 24,

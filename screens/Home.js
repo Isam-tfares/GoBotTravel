@@ -62,7 +62,7 @@ const Home = ({ navigation }) => {
                         ]}
                     >
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('Chat', { firstMessage: idea })}
+                            onPress={() => navigation.navigate('Chat', { firstMessage_suggested: idea })}
                         >
                             <Text style={[styles.boxText, { color: colors.text }]}>
                                 {idea}
@@ -73,7 +73,7 @@ const Home = ({ navigation }) => {
 
                 <TouchableOpacity
                     style={styles.btn}
-                    onPress={() => navigation.navigate('Chat', { firstMessage: '' })}
+                    onPress={() => navigation.navigate('Chat', { firstMessage_suggested: '' })}
                 >
                     <AntDesign name="plus" size={24} color={COLORS.white} />
                     <Text style={styles.btnText}>New Chat</Text>

@@ -25,8 +25,8 @@ const Profile = ({ navigation }) => {
                 </View>
 
                 <View style={styles.infoBox}>
-                    <Text style={[styles.label, { color: colors.text }]}>Full Name:</Text>
-                    <Text style={[styles.value, { color: colors.text }]}>{user.fullname}</Text>
+                    <Text style={[styles.label, { color: colors.text }]}>username:</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{user.username}</Text>
                 </View>
 
                 <View style={styles.infoBox}>

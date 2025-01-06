@@ -1,17 +1,16 @@
-import { View, Text, Image, Alert } from 'react-native'
-import React, { useCallback, useReducer, useState, useEffect } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import PageContainer from '../components/PageContainer'
-import { FONTS, SIZES, images } from '../constants'
-import { COLORS } from '../constants'
-import Input from '../components/Input'
-import Button from '../components/Button'
-import { reducer } from '../utils/reducers/formReducers'
+import { View, Text, Image, Alert } from 'react-native';
+import React, { useCallback, useReducer, useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import PageContainer from '../components/PageContainer';
+import { FONTS, SIZES, images } from '../constants';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import { reducer } from '../utils/reducers/formReducers';
 import { useDispatch } from 'react-redux';
-import { setUserData } from '../utils/actions/formActions'
-import { validateInput } from '../utils/actions/formActions'
-import { useTheme } from '../themes/ThemeProvider'
-import { useSelector } from 'react-redux'
+import { setUserData } from '../utils/actions/formActions';
+import { validateInput } from '../utils/actions/formActions';
+import { useTheme } from '../themes/ThemeProvider';
+import { useSelector } from 'react-redux';
 
 const initialState = {
     inputValues: {
@@ -23,39 +22,37 @@ const initialState = {
         password: false,
     },
     formIsValid: false,
-}
+};
 
 const Login = ({ navigation }) => {
-    const [formState, dispatchFormState] = useReducer(reducer, initialState)
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setErrorMessage] = useState(null)
-    const { colors } = useTheme()
-    const dispatch = useDispatch();  // Initialize dispatch from Redux
-    // check if is logined in
-    const isLogined = useSelector(state => state.user.user);
+    const [formState, dispatchFormState] = useReducer(reducer, initialState);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setErrorMessage] = useState(null);
+    const { colors } = useTheme();
+    const dispatch = useDispatch();
+    const isLogined = useSelector((state) => state.user.user);
+
     useEffect(() => {
         if (isLogined) {
             navigation.navigate('BottomTabNavigation');
         }
     }, [isLogined, navigation]);
 
-
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {
-            const result = validateInput(inputId, inputValue)
-            dispatchFormState({ inputId, validationResult: result, inputValue })
+            const result = validateInput(inputId, inputValue);
+            dispatchFormState({ inputId, validationResult: result, inputValue });
         },
         [dispatchFormState]
-    )
+    );
 
     const loginHandler = async () => {
-
         const { email, password } = formState.inputValues;
 
         try {
             setIsLoading(true);
-            const response = await fetch('http://192.168.8.104:5000/login', {
-                method: 'POST',
+            const response = await fetch('http://192.168.8.104:5000/api/login', {
+                method: 'POST', // Updated URL for the login API
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -65,43 +62,40 @@ const Login = ({ navigation }) => {
                 }),
             });
 
+            const data = await response.json();
+
             if (response.ok) {
-                const data = await response.json();
-                console.log(data);
-                if (data.token) {
-                    console.log('Login successful');
-                    // Save data in redux stor e
-                    // Dispatch action to store user data in Redux store
-                    dispatch(setUserData({
-                        token: data.token,
-                        user: {
-                            user_id: data.user.user_id,
-                            fullname: data.user.fullname,
-                            email: data.user.email,
-                        }
-                    }));
-                    // Navigate to the next screen and pass the token
-                    navigation.navigate('BottomTabNavigation');
+                console.log('Login successful:', data);
+
+                if (data.access_token) {
+                    dispatch(
+                        setUserData({
+                            token: data.access_token,
+                            user: {
+                                email: data.email,
+                                username: data.username,
+                            },
+                        })
+                    );
+
+                    navigation.navigate('BottomTabNavigation'); // Navigate to main app
                 }
             } else {
-                // const errorData = await response.json();
-                setErrorMessage('Invalid email or password. Please try again.');
+                setErrorMessage(data.error || 'Invalid email or password.');
             }
         } catch (error) {
             console.error('Login error:', error);
-            setErrorMessage('An error occurred. Please try again later.');
-        }
-        finally {
+            setErrorMessage('An error occurred. Please try again.');
+        } finally {
             setIsLoading(false);
         }
     };
 
-    // handle errors
     useEffect(() => {
         if (error) {
-            Alert.alert('An error occurred', error)
+            Alert.alert('Login Failed', error);
         }
-    }, [error])
+    }, [error]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -164,7 +158,7 @@ const Login = ({ navigation }) => {
                 </View>
             </PageContainer>
         </SafeAreaView>
-    )
-}
+    );
+};
 
-export default Login
+export default Login;
