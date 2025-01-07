@@ -52,13 +52,13 @@ const Register = ({ navigation }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://192.168.8.104:5000/api/signup', { // Updated to use the signup API
+            const response = await fetch('http://192.168.8.104:5000/api/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: formState.inputValues.username, // Updated to match the signup API
+                    username: formState.inputValues.username,
                     email: formState.inputValues.email,
                     password: formState.inputValues.password,
                 }),
@@ -68,7 +68,6 @@ const Register = ({ navigation }) => {
             console.log('Registration response:', data);
 
             if (response.ok) {
-                // Handle successful registration (optional: navigate or show success message)
                 Alert.alert('Success', 'User registered successfully!');
                 navigation.navigate('Login'); // Redirect to login screen after registration
             } else {

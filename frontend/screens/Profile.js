@@ -13,7 +13,7 @@ const Profile = ({ navigation }) => {
     const dispatch = useDispatch();
 
     const handleLogout = () => {
-        dispatch({ type: 'LOGOUT' });
+        dispatch({ type: 'LOGOUT_USER' });
         navigation.navigate('Login');
     };
 

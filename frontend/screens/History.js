@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { useTheme } from '../themes/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { TouchableOpacity } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import EmptyState from './EmptyState';
+
 
 const History = () => {
     const { colors } = useTheme();
     const [conversations, setConversations] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const token = useSelector((state) => state.user.user.token); // Get JWT token from Redux store
+    const token = useSelector((state) => state.user.user.token);
     const navigation = useNavigation();
 
     const fetchConversations = async () => {
@@ -23,7 +25,7 @@ const History = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`, // Attach JWT token for authentication
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -32,7 +34,7 @@ const History = () => {
             }
 
             const data = await response.json();
-            setConversations(data.conversations); // Update state with conversations
+            setConversations(data.conversations);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -46,9 +48,20 @@ const History = () => {
         }, [token])
     );
 
+    const onRefresh = async () => {
+        try {
+            setIsLoading(true);
+            await fetchConversations();
+        } catch (err) {
+            console.error('Error refreshing:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
     const handleDelete = async (id) => {
         try {
-            // Show confirmation alert before deleting
             Alert.alert(
                 'Delete Conversation',
                 'Are you sure you want to delete this conversation?',
@@ -65,7 +78,7 @@ const History = () => {
                                     method: 'DELETE',
                                     headers: {
                                         'Content-Type': 'application/json',
-                                        Authorization: `Bearer ${token}`, // Attach JWT token for authentication
+                                        Authorization: `Bearer ${token}`,
                                     },
                                 });
 
@@ -73,7 +86,6 @@ const History = () => {
                                     throw new Error('Failed to delete conversation');
                                 }
 
-                                // Successfully deleted conversation, update the state
                                 setConversations((prevConversations) =>
                                     prevConversations.filter((conversation) => conversation.id !== id)
                                 );
@@ -100,7 +112,7 @@ const History = () => {
                     onPress={() => navigation.navigate('Chat', { conversation: item })}>
                     <Ionicons name="chatbubble-ellipses-outline" size={24} style={styles.icon} />
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                        <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>{item.title.replace(/"/g, '')}</Text>
                         <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date(item.timestamp).toLocaleString()}</Text>
                     </View>
                     <TouchableOpacity onPress={() => handleDelete(item.id)}>
@@ -129,18 +141,29 @@ const History = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.header, { color: colors.text }]}>Conversations</Text>
+
+            <View style={styles.header}>
+                <Text style={[styles.headerText, { color: colors.text }]}>Conversations</Text>
+            </View>
             {conversations.length > 0 ? (
                 <FlatList
                     data={conversations}
                     renderItem={renderConversationItem}
                     keyExtractor={(item) => item.id.toString()}
                     contentContainerStyle={styles.list}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isLoading}
+                            onRefresh={onRefresh}
+                            colors={[colors.primary]}
+                        />
+                    }
                 />
+
             ) : (
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    No conversations available
-                </Text>
+                <EmptyState
+                    onStartNewConversation={() => navigation.navigate('Chat')}
+                />
             )}
         </View>
     );
@@ -154,6 +177,9 @@ const styles = StyleSheet.create({
         paddingBottom: 35,
     },
     header: {
+        paddingLeft: 16,
+    },
+    headerText: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 16,
