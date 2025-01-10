@@ -22,7 +22,7 @@ const History = () => {
             setIsLoading(true);
 
             const response = await fetch('http://192.168.8.104:5000/api/conversations', {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,

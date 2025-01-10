@@ -32,11 +32,11 @@ const Login = ({ navigation }) => {
     const dispatch = useDispatch();
     const isLogined = useSelector((state) => state.user.user);
 
-    useEffect(() => {
-        if (isLogined) {
-            navigation.navigate('BottomTabNavigation');
-        }
-    }, [isLogined, navigation]);
+    // useEffect(() => {
+    //     if (isLogined) {
+    //         navigation.navigate('BottomTabNavigation');
+    //     }
+    // }, [isLogined, navigation]);
 
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {

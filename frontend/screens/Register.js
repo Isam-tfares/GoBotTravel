@@ -34,11 +34,11 @@ const Register = ({ navigation }) => {
     const dispatch = useDispatch();
     const isLogined = useSelector(state => state.user.user);
 
-    useEffect(() => {
-        if (isLogined) {
-            navigation.navigate('BottomTabNavigation');
-        }
-    }, [isLogined, navigation]);
+    // useEffect(() => {
+    //     if (isLogined) {
+    //         navigation.navigate('BottomTabNavigation');
+    //     }
+    // }, [isLogined, navigation]);
 
     const inputChangedHandler = useCallback(
         (inputId, inputValue) => {
@@ -69,7 +69,7 @@ const Register = ({ navigation }) => {
 
             if (response.ok) {
                 Alert.alert('Success', 'User registered successfully!');
-                navigation.navigate('Login'); // Redirect to login screen after registration
+                navigation.navigate('Welcome'); // Redirect to login screen after registration
             } else {
                 setError(data.error || 'Something went wrong!');
             }

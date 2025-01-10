@@ -8,6 +8,7 @@ from datetime import datetime
 import os
 from mistralai import Mistral
 from datetime import timedelta
+import time
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -18,7 +19,8 @@ jwt = JWTManager(app)
 db.init_app(app)
 
 # Set the Mistral API Key
-os.environ['MISTRAL_API_KEY'] = "mEip0RAnxIMpQIM0MzPizJoXfgowXntp"
+# os.environ['MISTRAL_API_KEY'] = "mEip0RAnxIMpQIM0MzPizJoXfgowXntp"
+os.environ['MISTRAL_API_KEY'] = "oHlhemC69Br1B7jvPjC92kwCzU8J7bLH"
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
@@ -40,26 +42,35 @@ def generate_title(question):
         return "New Conversation"
 
 # Function to generate a response from the model
-def generate_response(prompt, context):
-    try:
-        chat_response = client.chat.complete(
-            model="mistral-large-latest",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that responds to travel-related questions."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                },
-                *context  # Include previous conversation context
-            ]
-        )
-        return chat_response.choices[0].message.content
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return "Sorry, I couldn't provide an answer at the moment."
+def generate_response(prompt, context, retries=3):
+    delay = 2  # Initial delay in seconds
+    for attempt in range(retries):
+        try:
+            chat_response = client.chat.complete(
+                model="mistral-large-latest",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant that responds to travel-related questions."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    },
+                    *context  # Include previous conversation context
+                ]
+            )
+            return chat_response.choices[0].message.content
+        except Exception as e:
+            if "rate limit exceeded" in str(e).lower():
+                print(f"Rate limit exceeded. Retrying in {delay} seconds... (Attempt {attempt + 1}/{retries})")
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                print(f"Error generating response: {e}")
+                return "Sorry, I couldn't provide an answer at the moment."
+    return "Rate limit exceeded. Please try again later."
+
 
 # Authentication APIs
 @app.route('/api/signup', methods=['POST'])
@@ -187,7 +198,7 @@ def handle_conversation():
 
 
 
-@app.route('/api/conversations', methods=['POST'])
+@app.route('/api/conversations', methods=['GET'])
 @jwt_required()
 def get_conversations():
     user_id = get_jwt_identity()
