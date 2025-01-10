@@ -19,8 +19,7 @@ jwt = JWTManager(app)
 db.init_app(app)
 
 # Set the Mistral API Key
-# os.environ['MISTRAL_API_KEY'] = "mEip0RAnxIMpQIM0MzPizJoXfgowXntp"
-os.environ['MISTRAL_API_KEY'] = "oHlhemC69Br1B7jvPjC92kwCzU8J7bLH"
+os.environ['MISTRAL_API_KEY'] = "your_mistral_api_key_here"
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
